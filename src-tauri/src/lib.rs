@@ -9,7 +9,8 @@ use core::{
 use tauri::{Manager, WindowEvent, generate_handler};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_custom_window::{
-    MAIN_WINDOW_LABEL, PREFERENCE_WINDOW_LABEL, show_preference_window,
+    CHAT_TRIGGER_WINDOW_LABEL, CHAT_WINDOW_LABEL, MAIN_WINDOW_LABEL, PREFERENCE_WINDOW_LABEL,
+    show_preference_window,
 };
 use utils::fs_extra::copy_dir;
 
@@ -23,7 +24,17 @@ pub fn run() {
 
             let preference_window = app.get_webview_window(PREFERENCE_WINDOW_LABEL).unwrap();
 
-            setup::default(&app_handle, main_window.clone(), preference_window.clone());
+            let chat_window = app.get_webview_window(CHAT_WINDOW_LABEL).unwrap();
+
+            let chat_trigger_window = app.get_webview_window(CHAT_TRIGGER_WINDOW_LABEL).unwrap();
+
+            setup::default(
+                &app_handle,
+                main_window.clone(),
+                preference_window.clone(),
+                chat_window.clone(),
+                chat_trigger_window.clone(),
+            );
 
             Ok(())
         })

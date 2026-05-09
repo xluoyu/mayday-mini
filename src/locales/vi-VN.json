@@ -147,6 +147,32 @@
           "feedbackIssues": "Báo lỗi",
           "viewLog": "Xem nhật ký"
         }
+      },
+      "chat": {
+        "title": "Trò chuyện AI",
+        "labels": {
+          "apiConfig": "Cấu hình API",
+          "apiKey": "API Key",
+          "apiEndpoint": "Địa chỉ API",
+          "model": "Mô hình",
+          "systemPrompt": "Prompt hệ thống",
+          "temperature": "Nhiệt độ",
+          "maxTokens": "Token tối đa",
+          "history": "Lịch sử trò chuyện",
+          "clearHistory": "Xóa lịch sử"
+        },
+        "hints": {
+          "apiKey": "API Key cho dịch vụ AI",
+          "apiEndpoint": "Địa chỉ cơ sở của API tương thích OpenAI",
+          "model": "Chọn hoặc nhập tên mô hình",
+          "systemPrompt": "Hướng dẫn tính cách và hành vi của AI",
+          "clearHistoryConfirm": "Bạn có chắc muốn xóa toàn bộ lịch sử trò chuyện?"
+        },
+        "buttons": {
+          "confirm": "Xác nhận",
+          "cancel": "Hủy",
+          "clear": "Xóa"
+        }
       }
     }
   },

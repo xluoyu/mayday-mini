@@ -147,6 +147,32 @@
           "feedbackIssues": "回饋問題",
           "viewLog": "查看日誌"
         }
+      },
+      "chat": {
+        "title": "AI 對話",
+        "labels": {
+          "apiConfig": "API 設定",
+          "apiKey": "API Key",
+          "apiEndpoint": "API 網址",
+          "model": "模型",
+          "systemPrompt": "系統提示詞",
+          "temperature": "溫度",
+          "maxTokens": "最大 Token 數",
+          "history": "聊天記錄",
+          "clearHistory": "清除記錄"
+        },
+        "hints": {
+          "apiKey": "你的 AI 服務 API Key",
+          "apiEndpoint": "OpenAI 兼容 API 的基礎網址",
+          "model": "選擇或輸入模型名稱",
+          "systemPrompt": "AI 的角色設定和行為指令",
+          "clearHistoryConfirm": "確定要清除所有聊天記錄嗎？"
+        },
+        "buttons": {
+          "confirm": "確定",
+          "cancel": "取消",
+          "clear": "清除"
+        }
       }
     }
   },

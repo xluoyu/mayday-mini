@@ -147,6 +147,32 @@
           "feedbackIssues": "Feedback Issues",
           "viewLog": "View Logs"
         }
+      },
+      "chat": {
+        "title": "AI Chat",
+        "labels": {
+          "apiConfig": "API Configuration",
+          "apiKey": "API Key",
+          "apiEndpoint": "API Endpoint",
+          "model": "Model",
+          "systemPrompt": "System Prompt",
+          "temperature": "Temperature",
+          "maxTokens": "Max Tokens",
+          "history": "Chat History",
+          "clearHistory": "Clear History"
+        },
+        "hints": {
+          "apiKey": "Your API key for the AI service",
+          "apiEndpoint": "Base URL of the OpenAI-compatible API",
+          "model": "Select or enter the model name",
+          "systemPrompt": "Instructions for the AI's personality and behavior",
+          "clearHistoryConfirm": "Are you sure you want to clear all chat history?"
+        },
+        "buttons": {
+          "confirm": "Confirm",
+          "cancel": "Cancel",
+          "clear": "Clear"
+        }
       }
     }
   },

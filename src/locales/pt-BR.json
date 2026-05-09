@@ -147,6 +147,32 @@
           "feedbackIssues": "Reportar Problema",
           "viewLog": "Ver Logs"
         }
+      },
+      "chat": {
+        "title": "Chat AI",
+        "labels": {
+          "apiConfig": "Configuração da API",
+          "apiKey": "API Key",
+          "apiEndpoint": "Endpoint da API",
+          "model": "Modelo",
+          "systemPrompt": "Prompt do Sistema",
+          "temperature": "Temperatura",
+          "maxTokens": "Máximo de Tokens",
+          "history": "Histórico do Chat",
+          "clearHistory": "Limpar Histórico"
+        },
+        "hints": {
+          "apiKey": "Sua chave de API para o serviço de IA",
+          "apiEndpoint": "URL base da API compatível com OpenAI",
+          "model": "Selecione ou digite o nome do modelo",
+          "systemPrompt": "Instruções para a personalidade e comportamento da IA",
+          "clearHistoryConfirm": "Tem certeza de que deseja limpar todo o histórico do chat?"
+        },
+        "buttons": {
+          "confirm": "Confirmar",
+          "cancel": "Cancelar",
+          "clear": "Limpar"
+        }
       }
     }
   },

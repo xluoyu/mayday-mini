@@ -29,6 +29,8 @@ pub fn platform(
     app_handle: &AppHandle,
     main_window: WebviewWindow,
     _preference_window: WebviewWindow,
+    _chat_window: WebviewWindow,
+    _chat_trigger_window: WebviewWindow,
 ) {
     let _ = app_handle.plugin(tauri_nspanel::init());
 

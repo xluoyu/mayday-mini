@@ -33,6 +33,31 @@
         "minWidth": 800,
         "minHeight": 600,
         "skipTaskbar": true
+      },
+      {
+        "label": "chat-trigger",
+        "url": "index.html/#/chat-trigger",
+        "visible": true,
+        "title": "",
+        "width": 48,
+        "height": 48,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "acceptFirstMouse": true
+      },
+      {
+        "label": "chat",
+        "url": "index.html/#/chat",
+        "visible": false,
+        "title": "AI Chat",
+        "minWidth": 360,
+        "minHeight": 480,
+        "width": 400,
+        "height": 520,
+        "skipTaskbar": true
       }
     ],
     "security": {

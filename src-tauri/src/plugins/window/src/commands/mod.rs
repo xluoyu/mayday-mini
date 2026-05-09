@@ -2,6 +2,8 @@ use tauri::{AppHandle, Manager, async_runtime::spawn};
 
 pub static MAIN_WINDOW_LABEL: &str = "main";
 pub static PREFERENCE_WINDOW_LABEL: &str = "preference";
+pub static CHAT_WINDOW_LABEL: &str = "chat";
+pub static CHAT_TRIGGER_WINDOW_LABEL: &str = "chat-trigger";
 
 #[cfg(target_os = "macos")]
 mod macos;
@@ -27,6 +29,14 @@ pub fn show_main_window(app_handle: &AppHandle) {
 
 pub fn show_preference_window(app_handle: &AppHandle) {
     show_window_by_label(app_handle, PREFERENCE_WINDOW_LABEL);
+}
+
+pub fn show_chat_window(app_handle: &AppHandle) {
+    show_window_by_label(app_handle, CHAT_WINDOW_LABEL);
+}
+
+pub fn show_chat_trigger_window(app_handle: &AppHandle) {
+    show_window_by_label(app_handle, CHAT_TRIGGER_WINDOW_LABEL);
 }
 
 fn show_window_by_label(app_handle: &AppHandle, label: &str) {

@@ -1,6 +1,5 @@
 import type { PhysicalPosition } from '@tauri-apps/api/dpi'
 
-import { LogicalSize } from '@tauri-apps/api/dpi'
 import { resolveResource, sep } from '@tauri-apps/api/path'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { message } from 'antdv-next'
@@ -120,17 +119,7 @@ export function useModel() {
 
     live2d.resizeModel(modelSize.value)
 
-    const { width, height } = modelSize.value
-
-    if (round(innerWidth / innerHeight, 1) !== round(width / height, 1)) {
-      await appWindow.setSize(
-        new LogicalSize({
-          width: innerWidth,
-          height: Math.ceil(innerWidth * (height / width)),
-        }),
-      )
-    }
-
+    const { width } = modelSize.value
     const size = await appWindow.size()
 
     catStore.window.scale = round((size.width / width) * 100)

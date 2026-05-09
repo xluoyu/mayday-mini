@@ -3,6 +3,7 @@ import type { MotionInfo } from 'easy-live2d'
 
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { PhysicalSize } from '@tauri-apps/api/dpi'
+import { emit } from '@tauri-apps/api/event'
 import { Menu, PredefinedMenuItem } from '@tauri-apps/api/menu'
 import { sep } from '@tauri-apps/api/path'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
@@ -39,7 +40,25 @@ const resizing = ref(false)
 const backgroundImagePath = ref<string>()
 const { stickActive } = useGamepad()
 
-onMounted(startListening)
+async function broadcastTriggerPosition() {
+  const position = await appWindow.outerPosition()
+  const size = await appWindow.outerSize()
+  await emit(LISTEN_KEY.CHAT_TRIGGER_POSITION, {
+    x: position.x,
+    y: position.y,
+    width: size.width,
+    height: size.height,
+  })
+}
+
+onMounted(() => {
+  startListening()
+
+  broadcastTriggerPosition()
+
+  appWindow.onMoved(broadcastTriggerPosition)
+  appWindow.onResized(broadcastTriggerPosition)
+})
 
 onUnmounted(handleDestroy)
 

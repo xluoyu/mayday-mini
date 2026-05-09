@@ -14,6 +14,14 @@ const routes: Readonly<RouteRecordRaw[]> = [
     path: '/preference',
     component: Preference,
   },
+  {
+    path: '/chat-trigger',
+    component: () => import('../pages/chat/trigger.vue'),
+  },
+  {
+    path: '/chat',
+    component: () => import('../pages/chat/index.vue'),
+  },
 ]
 
 const router = createRouter({

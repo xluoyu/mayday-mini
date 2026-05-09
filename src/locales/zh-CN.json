@@ -147,6 +147,32 @@
           "feedbackIssues": "反馈问题",
           "viewLog": "查看日志"
         }
+      },
+      "chat": {
+        "title": "AI 对话",
+        "labels": {
+          "apiConfig": "API 配置",
+          "apiKey": "API Key",
+          "apiEndpoint": "API 地址",
+          "model": "模型",
+          "systemPrompt": "系统提示词",
+          "temperature": "温度",
+          "maxTokens": "最大 Token 数",
+          "history": "聊天记录",
+          "clearHistory": "清除记录"
+        },
+        "hints": {
+          "apiKey": "你的 AI 服务 API Key",
+          "apiEndpoint": "OpenAI 兼容 API 的基础地址",
+          "model": "选择或输入模型名称",
+          "systemPrompt": "AI 的角色设定和行为指令",
+          "clearHistoryConfirm": "确定要清除所有聊天记录吗？"
+        },
+        "buttons": {
+          "confirm": "确定",
+          "cancel": "取消",
+          "clear": "清除"
+        }
       }
     }
   },
