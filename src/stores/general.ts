@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
-import { getLocale } from 'tauri-plugin-locale-api'
 import { reactive, ref } from 'vue'
 
 import { LANGUAGE } from '@/constants'
+import { isTauri } from '@/utils/isTauri'
 
 export type Theme = 'auto' | 'light' | 'dark'
 export type Language = typeof LANGUAGE[keyof typeof LANGUAGE]
@@ -60,6 +60,9 @@ export const useGeneralStore = defineStore('general', () => {
   })
 
   const getLanguage = async () => {
+    if (!isTauri) return LANGUAGE.EN_US
+
+    const { getLocale } = await import('tauri-plugin-locale-api')
     const locale = await getLocale<Language>()
 
     if (Object.values(LANGUAGE).includes(locale)) {

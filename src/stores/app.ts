@@ -1,8 +1,9 @@
-import { getName, getVersion } from '@tauri-apps/api/app'
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 
 import type { WindowState } from '@/composables/useWindowState'
+
+import { isTauri } from '@/utils/isTauri'
 
 export const useAppStore = defineStore('app', () => {
   const name = ref('')
@@ -10,8 +11,11 @@ export const useAppStore = defineStore('app', () => {
   const windowState = reactive<WindowState>({})
 
   const init = async () => {
-    name.value = await getName()
-    version.value = await getVersion()
+    if (isTauri) {
+      const { getName, getVersion } = await import('@tauri-apps/api/app')
+      name.value = await getName()
+      version.value = await getVersion()
+    }
   }
 
   return {

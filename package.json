@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "run-s build:icon dev:vite",
+    "dev:browser": "vite",
     "build": "run-s build:*",
     "dev:vite": "vite",
     "build:vite": "vite build",

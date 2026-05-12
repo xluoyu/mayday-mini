@@ -35,5 +35,12 @@ export default defineConfig(async () => ({
       // 3. tell vite to ignore watching `src-tauri`
       ignored: ['**/src-tauri/**'],
     },
+    proxy: {
+      '/api/ai': {
+        target: 'https://token-plan-cn.xiaomimimo.com',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api\/ai/, '/v1'),
+      },
+    },
   },
 }))

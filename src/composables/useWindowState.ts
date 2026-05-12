@@ -1,8 +1,5 @@
 import type { Event } from '@tauri-apps/api/event'
 
-import { PhysicalPosition, PhysicalSize } from '@tauri-apps/api/dpi'
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { availableMonitors } from '@tauri-apps/api/window'
 import { useDebounceFn } from '@vueuse/core'
 import { isNumber } from 'es-toolkit/compat'
 import { onMounted, ref, watch } from 'vue'
@@ -10,28 +7,31 @@ import { onMounted, ref, watch } from 'vue'
 import { WINDOW_LABEL } from '@/constants'
 import { useAppStore } from '@/stores/app'
 import { useCatStore } from '@/stores/cat'
+import { isTauri } from '@/utils/isTauri'
 import { getCursorMonitor } from '@/utils/monitor'
 
-export type WindowState = Record<string, Partial<PhysicalPosition & PhysicalSize> | undefined>
-
-const appWindow = getCurrentWebviewWindow()
-const { label } = appWindow
+export type WindowState = Record<string, Partial<{ x: number, y: number, width: number, height: number }> | undefined>
 
 export function useWindowState() {
   const appStore = useAppStore()
   const catStore = useCatStore()
   const isRestored = ref(false)
 
-  onMounted(() => {
-    appWindow.onMoved(onChange)
+  if (!isTauri) {
+    isRestored.value = true
+    return {
+      isRestored,
+      restoreState: async () => {},
+    }
+  }
 
-    appWindow.onResized(onChange)
-
-    appWindow.onScaleChanged(clampToMonitor)
-  })
+  let appWindow: Awaited<ReturnType<typeof import('@tauri-apps/api/webviewWindow').getCurrentWebviewWindow>> | undefined
+  let PhysicalPositionCtor: typeof import('@tauri-apps/api/dpi').PhysicalPosition | undefined
+  let PhysicalSizeCtor: typeof import('@tauri-apps/api/dpi').PhysicalSize | undefined
+  let label = ''
 
   const clampToMonitor = useDebounceFn(async () => {
-    if (label !== WINDOW_LABEL.MAIN || !catStore.window.keepInScreen) return
+    if (!appWindow || label !== WINDOW_LABEL.MAIN || !catStore.window.keepInScreen) return
 
     const monitor = await getCursorMonitor()
 
@@ -51,27 +51,52 @@ export function useWindowState() {
 
     if (clampedX === windowPos.x && clampedY === windowPos.y) return
 
-    return appWindow.setPosition(new PhysicalPosition(clampedX, clampedY))
+    return appWindow.setPosition(new PhysicalPositionCtor!(clampedX, clampedY))
   }, 500)
 
   watch(() => catStore.window.keepInScreen, clampToMonitor)
 
-  const onChange = async (event: Event<PhysicalPosition | PhysicalSize>) => {
+  const onChange = async (event: Event<{ x: number, y: number } | { width: number, height: number }>) => {
+    if (!appWindow) return
+
     const minimized = await appWindow.isMinimized()
 
     if (minimized) return
 
     appStore.windowState[label] ??= {}
 
-    Object.assign(appStore.windowState[label], event.payload)
+    Object.assign(appStore.windowState[label]!, event.payload)
 
     clampToMonitor()
   }
 
+  onMounted(async () => {
+    const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow')
+    const dpi = await import('@tauri-apps/api/dpi')
+    PhysicalPositionCtor = dpi.PhysicalPosition
+    PhysicalSizeCtor = dpi.PhysicalSize
+    appWindow = getCurrentWebviewWindow()
+    label = appWindow.label
+
+    appWindow.onMoved(onChange)
+    appWindow.onResized(onChange)
+    appWindow.onScaleChanged(clampToMonitor)
+  })
+
   const restoreState = async () => {
+    if (!appWindow || !PhysicalPositionCtor || !PhysicalSizeCtor) {
+      const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow')
+      const dpi = await import('@tauri-apps/api/dpi')
+      PhysicalPositionCtor = dpi.PhysicalPosition
+      PhysicalSizeCtor = dpi.PhysicalSize
+      appWindow = getCurrentWebviewWindow()
+      label = appWindow.label
+    }
+
     const { x, y, width, height } = appStore.windowState[label] ?? {}
 
     if (isNumber(x) && isNumber(y)) {
+      const { availableMonitors } = await import('@tauri-apps/api/window')
       const monitors = await availableMonitors()
 
       const monitor = monitors.find((monitor) => {
@@ -84,12 +109,12 @@ export function useWindowState() {
       })
 
       if (monitor) {
-        await appWindow.setPosition(new PhysicalPosition(x, y))
+        await appWindow.setPosition(new PhysicalPositionCtor(x, y))
       }
     }
 
     if (width && height) {
-      await appWindow.setSize(new PhysicalSize(width, height))
+      await appWindow.setSize(new PhysicalSizeCtor(width, height))
     }
 
     isRestored.value = true

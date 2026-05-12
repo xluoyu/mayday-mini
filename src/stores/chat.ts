@@ -9,23 +9,21 @@ export interface ChatMessage {
   timestamp: number
 }
 
+export type ChatProtocol = 'openai' | 'anthropic'
+
 export interface ChatConfig {
   apiKey: string
   apiEndpoint: string
   model: string
-  systemPrompt: string
-  temperature: number
-  maxTokens: number
+  protocol: ChatProtocol
 }
 
 export const useChatStore = defineStore('chat', () => {
   const config = reactive<ChatConfig>({
     apiKey: '',
-    apiEndpoint: 'https://api.openai.com/v1',
-    model: 'gpt-4o',
-    systemPrompt: '',
-    temperature: 0.7,
-    maxTokens: 2048,
+    apiEndpoint: '',
+    model: '',
+    protocol: 'openai',
   })
 
   const messages = ref<ChatMessage[]>([])

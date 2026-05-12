@@ -1,25 +1,28 @@
 <script setup lang="ts">
-import { PhysicalPosition } from '@tauri-apps/api/dpi'
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-
-import { useTauriListen } from '@/composables/useTauriListen'
 import { LISTEN_KEY, WINDOW_LABEL } from '@/constants'
 import { hideWindow, showWindow } from '@/plugins/window'
-
-const appWindow = getCurrentWebviewWindow()
+import { isTauri } from '@/utils/isTauri'
 
 async function handleClick() {
   await hideWindow(WINDOW_LABEL.CHAT_TRIGGER)
   showWindow(WINDOW_LABEL.CHAT)
 }
 
-useTauriListen<{ x: number, y: number, width: number, height: number }>(
-  LISTEN_KEY.CHAT_TRIGGER_POSITION,
-  async ({ payload }) => {
-    const { x, y, width } = payload
-    await appWindow.setPosition(new PhysicalPosition(x + width + 8, y + 8))
-  },
-)
+if (isTauri) {
+  const { PhysicalPosition } = await import('@tauri-apps/api/dpi')
+  const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow')
+  const { useTauriListen } = await import('@/composables/useTauriListen')
+
+  const appWindow = getCurrentWebviewWindow()
+
+  useTauriListen<{ x: number, y: number, width: number, height: number }>(
+    LISTEN_KEY.CHAT_TRIGGER_POSITION,
+    async ({ payload }) => {
+      const { x, y, width } = payload
+      await appWindow.setPosition(new PhysicalPosition(x + width + 8, y + 8))
+    },
+  )
+}
 </script>
 
 <template>

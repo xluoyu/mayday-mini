@@ -1,11 +1,11 @@
 import type { ExpressionInfo, MotionInfo } from 'easy-live2d'
 
-import { resolveResource } from '@tauri-apps/api/path'
 import { filter, find } from 'es-toolkit/compat'
 import { nanoid } from 'nanoid'
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 
+import { isTauri } from '@/utils/isTauri'
 import { join } from '@/utils/path'
 
 export type ModelMode = 'standard' | 'keyboard' | 'gamepad'
@@ -28,7 +28,12 @@ export const useModelStore = defineStore('model', () => {
   const shortcuts = reactive<Record<string, string>>({})
 
   const init = async () => {
-    const modelsPath = await resolveResource('assets/models')
+    let modelsPath = '/assets/models'
+
+    if (isTauri) {
+      const { resolveResource } = await import('@tauri-apps/api/path')
+      modelsPath = await resolveResource('assets/models')
+    }
 
     const nextModels = filter(models.value, { isPreset: false })
     const presetModels = filter(models.value, { isPreset: true })

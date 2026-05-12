@@ -1,7 +1,14 @@
-import { platform } from '@tauri-apps/plugin-os'
+import { isTauri } from './isTauri'
 
-export const isMac = platform() === 'macos'
+let currentPlatform = ''
 
-export const isWindows = platform() === 'windows'
+if (isTauri) {
+  const { platform } = await import('@tauri-apps/plugin-os')
+  currentPlatform = platform()
+}
 
-export const isLinux = platform() === 'linux'
+export const isMac = currentPlatform === 'macos'
+
+export const isWindows = currentPlatform === 'windows'
+
+export const isLinux = currentPlatform === 'linux'

@@ -1,10 +1,7 @@
-import { invoke } from '@tauri-apps/api/core'
-import { emit } from '@tauri-apps/api/event'
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-
 import type { WINDOW_LABEL } from '../constants'
 
 import { LISTEN_KEY } from '../constants'
+import { isTauri } from '../utils/isTauri'
 
 export type WindowLabel = typeof WINDOW_LABEL[keyof typeof WINDOW_LABEL]
 
@@ -15,7 +12,12 @@ const COMMAND = {
   SET_TASKBAR_VISIBILITY: 'plugin:custom-window|set_taskbar_visibility',
 }
 
-export function showWindow(label?: WindowLabel) {
+export async function showWindow(label?: WindowLabel) {
+  if (!isTauri) return
+
+  const { invoke } = await import('@tauri-apps/api/core')
+  const { emit } = await import('@tauri-apps/api/event')
+
   if (label) {
     emit(LISTEN_KEY.SHOW_WINDOW, label)
   } else {
@@ -23,7 +25,12 @@ export function showWindow(label?: WindowLabel) {
   }
 }
 
-export function hideWindow(label?: WindowLabel) {
+export async function hideWindow(label?: WindowLabel) {
+  if (!isTauri) return
+
+  const { invoke } = await import('@tauri-apps/api/core')
+  const { emit } = await import('@tauri-apps/api/event')
+
   if (label) {
     emit(LISTEN_KEY.HIDE_WINDOW, label)
   } else {
@@ -31,11 +38,17 @@ export function hideWindow(label?: WindowLabel) {
   }
 }
 
-export function setAlwaysOnTop(alwaysOnTop: boolean) {
+export async function setAlwaysOnTop(alwaysOnTop: boolean) {
+  if (!isTauri) return
+
+  const { invoke } = await import('@tauri-apps/api/core')
   invoke(COMMAND.SET_ALWAYS_ON_TOP, { alwaysOnTop })
 }
 
 export async function toggleWindowVisible(label?: WindowLabel) {
+  if (!isTauri) return
+
+  const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow')
   const appWindow = getCurrentWebviewWindow()
 
   if (appWindow.label !== label) return
@@ -50,5 +63,8 @@ export async function toggleWindowVisible(label?: WindowLabel) {
 }
 
 export async function setTaskbarVisibility(visible: boolean) {
+  if (!isTauri) return
+
+  const { invoke } = await import('@tauri-apps/api/core')
   invoke(COMMAND.SET_TASKBAR_VISIBILITY, { visible })
 }

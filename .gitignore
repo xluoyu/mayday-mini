@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 target
+.env
+.env.*
 
 # Editor directories and files
 .idea
