@@ -47,6 +47,6 @@ fn show_window_by_label(app_handle: &AppHandle, label: &str) {
     let app_handle = app_handle.clone();
 
     spawn(async move {
-        show_window(app_handle, window).await;
+        show_window(app_handle, window, None).await;
     });
 }

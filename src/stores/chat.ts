@@ -16,6 +16,7 @@ export interface ChatConfig {
   apiEndpoint: string
   model: string
   protocol: ChatProtocol
+  enabled: boolean
 }
 
 export const useChatStore = defineStore('chat', () => {
@@ -24,6 +25,7 @@ export const useChatStore = defineStore('chat', () => {
     apiEndpoint: '',
     model: '',
     protocol: 'openai',
+    enabled: true,
   })
 
   const messages = ref<ChatMessage[]>([])
@@ -61,4 +63,8 @@ export const useChatStore = defineStore('chat', () => {
     updateMessage,
     clearHistory,
   }
+}, {
+  tauri: {
+    filterKeys: ['messages', 'isLoading', 'isStreaming'],
+  },
 })

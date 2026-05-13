@@ -5,7 +5,7 @@ import { isTauri } from '@/utils/isTauri'
 
 async function handleClick() {
   await hideWindow(WINDOW_LABEL.CHAT_TRIGGER)
-  showWindow(WINDOW_LABEL.CHAT)
+  await showWindow(WINDOW_LABEL.CHAT)
 }
 
 if (isTauri) {

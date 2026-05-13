@@ -1,19 +1,39 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import VueMarkdown from 'vue-markdown-render'
 
+import { Button, Empty, Input, InputPassword, Modal, RadioGroup, Watermark } from 'antdv-next'
+
 import { useChat } from '@/composables/useChat'
-import { WINDOW_LABEL } from '@/constants'
+import { AI_GUIDE_URL, WINDOW_LABEL } from '@/constants'
 import { hideWindow, showWindow } from '@/plugins/window'
 import { useChatStore } from '@/stores/chat'
 import { isTauri } from '@/utils/isTauri'
 
+let openUrl: ((url: string) => Promise<void>) | undefined
+
+if (isTauri) {
+  ({ openUrl } = await import('@tauri-apps/plugin-opener'))
+}
+
+function handleOpenGuide() {
+  if (openUrl) {
+    openUrl(AI_GUIDE_URL)
+  } else {
+    window.open(AI_GUIDE_URL, '_blank')
+  }
+}
+
 const chatStore = useChatStore()
-const { sendMessage } = useChat()
+const { sendMessage, stopStreaming, clearHistory } = useChat()
 
 const inputText = ref('')
 const messagesRef = ref<HTMLDivElement>()
 const showSettings = ref(false)
+
+const isConfigured = computed(() => {
+  return chatStore.config.enabled && !!(chatStore.config.apiEndpoint && chatStore.config.apiKey && chatStore.config.model)
+})
 
 let appWindow: { startDragging: () => void } | undefined
 
@@ -35,10 +55,15 @@ async function handleSend() {
   scrollToBottom()
 }
 
+function handleStop() {
+  stopStreaming()
+}
+
 async function handleClose() {
   if (isTauri) {
+    clearHistory()
     await hideWindow(WINDOW_LABEL.CHAT)
-    showWindow(WINDOW_LABEL.CHAT_TRIGGER)
+    await showWindow(WINDOW_LABEL.CHAT_TRIGGER)
   }
 }
 
@@ -54,9 +79,14 @@ function toggleSettings() {
   showSettings.value = !showSettings.value
 }
 
-function saveSettings() {
+function handleSettingsCancel() {
   showSettings.value = false
 }
+
+const protocolOptions = [
+  { label: 'OpenAI', value: 'openai' },
+  { label: 'Anthropic', value: 'anthropic' },
+]
 
 watch(() => chatStore.messages.length, scrollToBottom)
 watch(() => chatStore.isStreaming, (streaming) => {
@@ -102,109 +132,157 @@ watch(() => chatStore.isStreaming, (streaming) => {
       class="chat-messages"
       @mousedown.stop
     >
-      <div
-        v-for="msg in chatStore.messages"
-        :key="msg.id"
-        class="message-row"
-        :class="[msg.role]"
+      <!-- Empty state -->
+      <Empty
+        v-if="chatStore.messages.length === 0"
+        description="请点击右上角 ⚙ 配置 API 地址、Key 和模型"
       >
-        <img
-          v-if="msg.role === 'assistant'"
-          class="avatar"
-          src="/ashin.jpg"
-          alt="AI"
-        >
-        <div class="bubble" :class="[msg.role]">
-          <template v-if="msg.content">
-            <VueMarkdown v-if="msg.role === 'assistant'" :source="msg.content" class="markdown-body" />
-            <template v-else>
-              {{ msg.content }}
-            </template>
-          </template>
-          <template v-else-if="msg.role === 'assistant' && chatStore.isStreaming">
-            <span class="typing-dot" /><span class="typing-dot" /><span class="typing-dot" />
-          </template>
+        <template #image>
+          <div class="empty-custom">
+            <div class="empty-custom-image">⚙</div>
+          </div>
+        </template>
+        <template #footer>
+          <Button
+            v-if="AI_GUIDE_URL"
+            type="link"
+            size="small"
+            @click="handleOpenGuide"
+          >
+            查看接入说明 →
+          </Button>
+        </template>
+      </Empty>
+
+      <!-- Messages with watermark -->
+      <Watermark
+        v-else
+        content="对话由AI生成"
+        :z-index="0"
+        :font-size="14"
+        :rotate="-22"
+        :gap="[80, 80]"
+        class="watermark-wrap"
+      >
+        <div class="messages-content">
+          <div
+            v-for="msg in chatStore.messages"
+            :key="msg.id"
+            class="message-row"
+            :class="[msg.role]"
+          >
+            <img
+              v-if="msg.role === 'assistant'"
+              class="avatar"
+              src="/ashin.jpg"
+              alt="AI"
+            >
+            <div class="bubble" :class="[msg.role]">
+              <template v-if="msg.content">
+                <VueMarkdown v-if="msg.role === 'assistant'" :source="msg.content" class="markdown-body" />
+                <template v-else>
+                  {{ msg.content }}
+                </template>
+              </template>
+              <template v-else-if="msg.role === 'assistant' && chatStore.isStreaming">
+                <span class="typing-dot" /><span class="typing-dot" /><span class="typing-dot" />
+              </template>
+            </div>
+            <img
+              v-if="msg.role === 'user'"
+              class="avatar"
+              src="/user.jpg"
+              alt="User"
+            >
+          </div>
         </div>
-        <img
-          v-if="msg.role === 'user'"
-          class="avatar"
-          src="/user.jpg"
-          alt="User"
-        >
-      </div>
+      </Watermark>
     </div>
 
     <!-- Input -->
     <div class="chat-input-area" @mousedown.stop>
-      <input
-        v-model="inputText"
-        class="chat-input"
+      <Input
+        v-model:value="inputText"
         :disabled="chatStore.isLoading"
         placeholder="输入消息..."
         @keydown.enter.prevent="handleSend"
+      />
+      <Button
+        v-if="chatStore.isLoading"
+        danger
+        @click.stop="handleStop"
       >
-      <button
-        class="send-btn"
-        :class="{ active: inputText.trim() && !chatStore.isLoading }"
-        :disabled="!inputText.trim() || chatStore.isLoading"
+        停止
+      </Button>
+      <Button
+        v-else
+        type="primary"
+        :disabled="!inputText.trim()"
         @click.stop="handleSend"
       >
         发送
-      </button>
+      </Button>
     </div>
 
     <!-- Settings Modal -->
-    <div v-if="showSettings" class="settings-overlay" @click.self="showSettings = false" @mousedown.stop>
-      <div class="settings-modal">
-        <div class="settings-header">
-          <span>AI 配置</span>
-          <svg
-            class="settings-close"
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            @click="showSettings = false"
+    <Modal
+      v-model:open="showSettings"
+      title="AI 配置"
+      centered
+      width="360"
+      @cancel="handleSettingsCancel"
+    >
+      <div class="settings-form">
+        <div class="settings-field">
+          <div class="settings-label">接入说明</div>
+          <Button
+            type="link"
+            size="small"
+            @click="handleOpenGuide"
           >
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+            查看接入说明 →
+          </Button>
         </div>
-        <div class="settings-body">
-          <div class="settings-label">
-            接入协议
-            <div class="radio-group">
-              <label class="radio-item">
-                <input v-model="chatStore.config.protocol" type="radio" value="openai">
-                <span>OpenAI</span>
-              </label>
-              <label class="radio-item">
-                <input v-model="chatStore.config.protocol" type="radio" value="anthropic">
-                <span>Anthropic</span>
-              </label>
-            </div>
-          </div>
-          <label class="settings-label">
-            API 地址
-            <input v-model="chatStore.config.apiEndpoint" class="settings-input" placeholder="留空使用默认">
-          </label>
-          <label class="settings-label">
-            API Key
-            <input v-model="chatStore.config.apiKey" class="settings-input" type="password" placeholder="留空使用默认">
-          </label>
-          <label class="settings-label">
-            模型
-            <input v-model="chatStore.config.model" class="settings-input" placeholder="留空使用默认">
-          </label>
+        <div class="settings-field">
+          <div class="settings-label">接入协议</div>
+          <RadioGroup
+            v-model:value="chatStore.config.protocol"
+            :options="protocolOptions"
+            option-type="button"
+            button-style="solid"
+          />
         </div>
-        <div class="settings-footer">
-          <button class="settings-save-btn" @click="saveSettings">
-            确定
-          </button>
+        <div class="settings-field">
+          <div class="settings-label">API 地址</div>
+          <Input
+            v-model:value="chatStore.config.apiEndpoint"
+            placeholder="https://api.openai.com/v1"
+          />
+        </div>
+        <div class="settings-field">
+          <div class="settings-label">API Key</div>
+          <InputPassword
+            v-model:value="chatStore.config.apiKey"
+            placeholder="sk-..."
+          />
+        </div>
+        <div class="settings-field">
+          <div class="settings-label">模型</div>
+          <Input
+            v-model:value="chatStore.config.model"
+            placeholder="gpt-4o"
+          />
         </div>
       </div>
-    </div>
+      <template #footer>
+        <Button @click="handleSettingsCancel">
+          取消
+        </Button>
+        <Button type="primary" @click="showSettings = false">
+          保存
+        </Button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -256,7 +334,7 @@ watch(() => chatStore.isStreaming, (streaming) => {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 12px;
+  padding: 16px 12px 32px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -269,6 +347,22 @@ watch(() => chatStore.isStreaming, (streaming) => {
 .chat-messages::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.15);
   border-radius: 2px;
+}
+
+.watermark-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: visible !important;
+}
+
+.messages-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .message-row {
@@ -378,49 +472,6 @@ watch(() => chatStore.isStreaming, (streaming) => {
   border-top: 1px solid #d9d9d9;
 }
 
-.chat-input {
-  flex: 1;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-size: 14px;
-  color: #191919;
-  outline: none;
-}
-
-.chat-input:focus {
-  border-color: #c0c0c0;
-}
-
-.chat-input::placeholder {
-  color: #b0b0b0;
-}
-
-.chat-input:disabled {
-  opacity: 0.6;
-}
-
-.send-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  background: #c0c0c0;
-  color: #fff;
-  transition: background 0.2s;
-  white-space: nowrap;
-}
-
-.send-btn.active {
-  background: #55b4f0;
-}
-
-.send-btn:disabled {
-  cursor: not-allowed;
-}
-
 .typing-dot {
   display: inline-block;
   width: 6px;
@@ -439,128 +490,26 @@ watch(() => chatStore.isStreaming, (streaming) => {
   40% { transform: scale(1); }
 }
 
-/* Settings Modal */
-.settings-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.settings-modal {
-  background: #fff;
-  border-radius: 8px;
-  width: 340px;
-  max-height: 80vh;
+/* Settings form */
+.settings-form {
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  gap: 16px;
 }
 
-.settings-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #eee;
-  font-size: 16px;
-  font-weight: 500;
-  color: #191919;
-}
-
-.settings-close {
-  cursor: pointer;
-  color: #999;
-}
-
-.settings-close:hover {
-  color: #333;
-}
-
-.settings-body {
-  padding: 16px 20px;
-  overflow-y: auto;
+.settings-field {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 6px;
 }
 
 .settings-label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   font-size: 13px;
   color: #666;
 }
 
-.radio-group {
-  display: flex;
-  gap: 16px;
-  margin-top: 4px;
-}
-
-.radio-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  color: #191919;
-  cursor: pointer;
-}
-
-.radio-item input[type="radio"] {
-  accent-color: #55b4f0;
-}
-
-.settings-input {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 8px 10px;
-  font-size: 14px;
-  color: #191919;
-  outline: none;
-}
-
-.settings-input:focus {
-  border-color: #55b4f0;
-}
-
-.settings-textarea {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 8px 10px;
-  font-size: 14px;
-  color: #191919;
-  outline: none;
-  resize: vertical;
-  min-height: 60px;
-}
-
-.settings-textarea:focus {
-  border-color: #55b4f0;
-}
-
-.settings-footer {
-  padding: 12px 20px;
-  border-top: 1px solid #eee;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.settings-save-btn {
-  padding: 8px 24px;
-  background: #55b4f0;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.settings-save-btn:hover {
-  background: #3da5e6;
+.empty-custom-image {
+  font-size: 48px;
+  opacity: 0.4;
 }
 </style>

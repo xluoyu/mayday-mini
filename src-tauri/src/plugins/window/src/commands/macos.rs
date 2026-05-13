@@ -1,6 +1,6 @@
 #![allow(deprecated)]
 use crate::MAIN_WINDOW_LABEL;
-use tauri::{AppHandle, Runtime, WebviewWindow, command};
+use tauri::{AppHandle, Manager, Runtime, WebviewWindow, command};
 use tauri_nspanel::{CollectionBehavior, ManagerExt, PanelLevel};
 
 enum MacOSPanelStatus {
@@ -60,22 +60,38 @@ fn set_macos_panel<R: Runtime>(
 }
 
 #[command]
-pub async fn show_window<R: Runtime>(app_handle: AppHandle<R>, window: WebviewWindow<R>) {
-    if is_main_window(&window) {
-        set_macos_panel(&app_handle, &window, MacOSPanelStatus::Show);
+pub async fn show_window<R: Runtime>(
+    app_handle: AppHandle<R>,
+    window: WebviewWindow<R>,
+    label: Option<String>,
+) {
+    let target = label
+        .and_then(|l| app_handle.get_webview_window(&l))
+        .unwrap_or(window);
+
+    if is_main_window(&target) {
+        set_macos_panel(&app_handle, &target, MacOSPanelStatus::Show);
     } else {
-        let _ = window.show();
-        let _ = window.unminimize();
-        let _ = window.set_focus();
+        let _ = target.show();
+        let _ = target.unminimize();
+        let _ = target.set_focus();
     }
 }
 
 #[command]
-pub async fn hide_window<R: Runtime>(app_handle: AppHandle<R>, window: WebviewWindow<R>) {
-    if is_main_window(&window) {
-        set_macos_panel(&app_handle, &window, MacOSPanelStatus::Hide);
+pub async fn hide_window<R: Runtime>(
+    app_handle: AppHandle<R>,
+    window: WebviewWindow<R>,
+    label: Option<String>,
+) {
+    let target = label
+        .and_then(|l| app_handle.get_webview_window(&l))
+        .unwrap_or(window);
+
+    if is_main_window(&target) {
+        set_macos_panel(&app_handle, &target, MacOSPanelStatus::Hide);
     } else {
-        let _ = window.hide();
+        let _ = target.hide();
     }
 }
 

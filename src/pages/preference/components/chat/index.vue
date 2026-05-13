@@ -1,32 +1,61 @@
 <script setup lang="ts">
-import { Input, InputNumber, Popconfirm, Select, Slider } from 'antdv-next'
+import { openUrl } from '@tauri-apps/plugin-opener'
+import { Button, Input, InputPassword, Popconfirm, RadioGroup, Switch } from 'antdv-next'
 
 import ProListItem from '@/components/pro-list-item/index.vue'
 import ProList from '@/components/pro-list/index.vue'
 import { useChat } from '@/composables/useChat'
+import { AI_GUIDE_URL } from '@/constants'
 import { useChatStore } from '@/stores/chat'
 
 const chatStore = useChatStore()
 const { clearHistory } = useChat()
 
-const modelOptions = [
-  { label: 'GPT-4o', value: 'gpt-4o' },
-  { label: 'GPT-4o Mini', value: 'gpt-4o-mini' },
-  { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
-  { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' },
-  { label: 'Claude 3 Haiku', value: 'claude-3-haiku-20240307' },
+const protocolOptions = [
+  { label: 'OpenAI', value: 'openai' },
+  { label: 'Anthropic', value: 'anthropic' },
 ]
 </script>
 
 <template>
   <ProList :title="$t('pages.preference.chat.labels.apiConfig')">
     <ProListItem
-      :description="$t('pages.preference.chat.hints.apiEndpoint')"
+      title="AI 对话"
+    >
+      <Switch v-model:checked="chatStore.config.enabled" />
+    </ProListItem>
+
+    <ProListItem
+      title="接入说明"
+    >
+      <Button
+        v-if="AI_GUIDE_URL"
+        size="small"
+        type="link"
+        @click="openUrl(AI_GUIDE_URL)"
+      >
+        查看接入说明 →
+      </Button>
+    </ProListItem>
+
+    <ProListItem
+      title="接入协议"
+    >
+      <RadioGroup
+        v-model:value="chatStore.config.protocol"
+        button-style="solid"
+        option-type="button"
+        :options="protocolOptions"
+      />
+    </ProListItem>
+
+    <ProListItem
+      description="如 https://api.openai.com/v1"
       :title="$t('pages.preference.chat.labels.apiEndpoint')"
     >
       <Input
         v-model:value="chatStore.config.apiEndpoint"
-        class="w-full"
+        class="w-1/2"
         placeholder="https://api.openai.com/v1"
       />
     </ProListItem>
@@ -35,51 +64,20 @@ const modelOptions = [
       :description="$t('pages.preference.chat.hints.apiKey')"
       :title="$t('pages.preference.chat.labels.apiKey')"
     >
-      <Input
+      <InputPassword
         v-model:value="chatStore.config.apiKey"
-        class="w-full"
+        class="w-1/2"
         placeholder="sk-..."
-        type="password"
       />
     </ProListItem>
 
     <ProListItem
-      :description="$t('pages.preference.chat.hints.model')"
       :title="$t('pages.preference.chat.labels.model')"
     >
-      <Select
+      <Input
         v-model:value="chatStore.config.model"
-        class="w-full"
-        :options="modelOptions"
-        show-search
-      />
-    </ProListItem>
-
-    <ProListItem
-      :title="$t('pages.preference.chat.labels.systemPrompt')"
-    >
-      <Textarea
-        v-model:value="chatStore.config.systemPrompt"
-        :rows="3"
-      />
-    </ProListItem>
-
-    <ProListItem :title="$t('pages.preference.chat.labels.temperature')">
-      <Slider
-        v-model:value="chatStore.config.temperature"
-        class="m-0!"
-        :max="2"
-        :min="0"
-        :step="0.1"
-      />
-    </ProListItem>
-
-    <ProListItem :title="$t('pages.preference.chat.labels.maxTokens')">
-      <InputNumber
-        v-model:value="chatStore.config.maxTokens"
-        class="w-24"
-        :max="128000"
-        :min="100"
+        class="w-1/2"
+        placeholder="gpt-4o"
       />
     </ProListItem>
   </ProList>

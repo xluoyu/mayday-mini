@@ -8,16 +8,18 @@ import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterView } from 'vue-router'
 
-import { LANGUAGE, LISTEN_KEY } from './constants'
+import { LANGUAGE } from './constants'
 import { getAntdLocale } from './locales/index.ts'
 import { useAppStore } from './stores/app'
 import { useCatStore } from './stores/cat'
+import { useChatStore } from './stores/chat'
 import { useGeneralStore } from './stores/general'
 import { useModelStore } from './stores/model'
 import { useShortcutStore } from './stores/shortcut.ts'
 import { isTauri } from './utils/isTauri'
 
 const appStore = useAppStore()
+const chatStore = useChatStore()
 const modelStore = useModelStore()
 const catStore = useCatStore()
 const generalStore = useGeneralStore()
@@ -28,12 +30,8 @@ const isRestored = ref(!isTauri)
 
 onMounted(async () => {
   if (isTauri) {
-    const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow')
-    const { useTauriListen } = await import('./composables/useTauriListen')
     const { useWindowState } = await import('./composables/useWindowState')
-    const { hideWindow, showWindow } = await import('./plugins/window')
 
-    const appWindow = getCurrentWebviewWindow()
     const { restoreState } = useWindowState()
 
     await appStore.$tauri.start()
@@ -45,18 +43,9 @@ onMounted(async () => {
     await generalStore.$tauri.start()
     await generalStore.init()
     await shortcutStore.$tauri.start()
+    await chatStore.$tauri.start()
     await restoreState()
     isRestored.value = true
-
-    useTauriListen(LISTEN_KEY.SHOW_WINDOW, ({ payload }) => {
-      if (appWindow.label !== payload) return
-      showWindow()
-    })
-
-    useTauriListen(LISTEN_KEY.HIDE_WINDOW, ({ payload }) => {
-      if (appWindow.label !== payload) return
-      hideWindow()
-    })
   }
 })
 

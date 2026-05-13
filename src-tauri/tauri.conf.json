@@ -37,7 +37,7 @@
       {
         "label": "chat-trigger",
         "url": "index.html/#/chat-trigger",
-        "visible": true,
+        "visible": false,
         "title": "",
         "width": 48,
         "height": 48,
@@ -85,7 +85,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["assets/tray.png", "assets/models", "assets/skill"]
+    "resources": ["assets/tray.png", "assets/models"]
   },
   "plugins": {
     "updater": {

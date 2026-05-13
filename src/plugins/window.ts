@@ -1,6 +1,5 @@
 import type { WINDOW_LABEL } from '../constants'
 
-import { LISTEN_KEY } from '../constants'
 import { isTauri } from '../utils/isTauri'
 
 export type WindowLabel = typeof WINDOW_LABEL[keyof typeof WINDOW_LABEL]
@@ -16,26 +15,14 @@ export async function showWindow(label?: WindowLabel) {
   if (!isTauri) return
 
   const { invoke } = await import('@tauri-apps/api/core')
-  const { emit } = await import('@tauri-apps/api/event')
-
-  if (label) {
-    emit(LISTEN_KEY.SHOW_WINDOW, label)
-  } else {
-    invoke(COMMAND.SHOW_WINDOW)
-  }
+  await invoke(COMMAND.SHOW_WINDOW, { label: label ?? null })
 }
 
 export async function hideWindow(label?: WindowLabel) {
   if (!isTauri) return
 
   const { invoke } = await import('@tauri-apps/api/core')
-  const { emit } = await import('@tauri-apps/api/event')
-
-  if (label) {
-    emit(LISTEN_KEY.HIDE_WINDOW, label)
-  } else {
-    invoke(COMMAND.HIDE_WINDOW)
-  }
+  await invoke(COMMAND.HIDE_WINDOW, { label: label ?? null })
 }
 
 export async function setAlwaysOnTop(alwaysOnTop: boolean) {

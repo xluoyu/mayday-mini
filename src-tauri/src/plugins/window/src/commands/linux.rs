@@ -1,15 +1,31 @@
-use tauri::{AppHandle, Runtime, WebviewWindow, command};
+use tauri::{AppHandle, Manager, Runtime, WebviewWindow, command};
 
 #[command]
-pub async fn show_window<R: Runtime>(_app_handle: AppHandle<R>, window: WebviewWindow<R>) {
-    let _ = window.show();
-    let _ = window.unminimize();
-    let _ = window.set_focus();
+pub async fn show_window<R: Runtime>(
+    app_handle: AppHandle<R>,
+    window: WebviewWindow<R>,
+    label: Option<String>,
+) {
+    let target = label
+        .and_then(|l| app_handle.get_webview_window(&l))
+        .unwrap_or(window);
+
+    let _ = target.show();
+    let _ = target.unminimize();
+    let _ = target.set_focus();
 }
 
 #[command]
-pub async fn hide_window<R: Runtime>(_app_handle: AppHandle<R>, window: WebviewWindow<R>) {
-    let _ = window.hide();
+pub async fn hide_window<R: Runtime>(
+    app_handle: AppHandle<R>,
+    window: WebviewWindow<R>,
+    label: Option<String>,
+) {
+    let target = label
+        .and_then(|l| app_handle.get_webview_window(&l))
+        .unwrap_or(window);
+
+    let _ = target.hide();
 }
 
 #[command]

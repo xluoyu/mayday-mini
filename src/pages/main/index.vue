@@ -18,8 +18,9 @@ import { useDevice } from '@/composables/useDevice'
 import { useGamepad } from '@/composables/useGamepad'
 import { useModel } from '@/composables/useModel'
 import { useTauriListen } from '@/composables/useTauriListen'
-import { LISTEN_KEY } from '@/constants'
+import { LISTEN_KEY, WINDOW_LABEL } from '@/constants'
 import { hideWindow, setAlwaysOnTop, setTaskbarVisibility, showWindow } from '@/plugins/window'
+import { useChatStore } from '@/stores/chat'
 import { useCatStore } from '@/stores/cat'
 import { useGeneralStore } from '@/stores/general.ts'
 import { useModelStore } from '@/stores/model'
@@ -33,6 +34,7 @@ const { startListening } = useDevice()
 const appWindow = getCurrentWebviewWindow()
 const { modelSize, handleLoad, handleDestroy, handleResize, handleKeyChange } = useModel()
 const catStore = useCatStore()
+const chatStore = useChatStore()
 const { getBaseMenu, getExitMenu } = useAppMenu()
 const modelStore = useModelStore()
 const generalStore = useGeneralStore()
@@ -141,6 +143,10 @@ watch(() => catStore.window.passThrough, (value) => {
 watch(() => catStore.window.alwaysOnTop, setAlwaysOnTop, { immediate: true })
 
 watch(() => generalStore.app.taskbarVisible, setTaskbarVisibility, { immediate: true })
+
+watch(() => chatStore.config.enabled, (enabled) => {
+  enabled ? showWindow(WINDOW_LABEL.CHAT_TRIGGER) : hideWindow(WINDOW_LABEL.CHAT_TRIGGER)
+}, { immediate: true })
 
 watch(() => catStore.model.motionSound, live2d.setMotionSoundEnabled, { immediate: true })
 

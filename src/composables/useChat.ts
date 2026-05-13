@@ -1,8 +1,9 @@
 import { useChatStore } from '@/stores/chat'
-import { buildSystemPrompt } from './useSkillRouter'
+import { getSystemPrompt } from './useSkillRouter'
 
 export function useChat() {
   const chatStore = useChatStore()
+  let currentAbortController: AbortController | null = null
 
   async function sendMessage(content: string) {
     if (!content.trim() || chatStore.isLoading) return
@@ -12,13 +13,19 @@ export function useChat() {
     chatStore.isStreaming = true
 
     const assistantMsg = chatStore.addMessage('assistant', '')
+    const abortController = new AbortController()
+    currentAbortController = abortController
 
     try {
       const { config, messages } = chatStore
 
-      const apiUrl = config.apiEndpoint || import.meta.env.VITE_AI_API_URL || '/api/ai'
-      const apiKey = config.apiKey || import.meta.env.VITE_AI_API_KEY
-      const model = config.model || import.meta.env.VITE_AI_MODEL
+      if (!config.apiEndpoint || !config.apiKey || !config.model) {
+        throw new Error('请先在设置中配置 AI 接入信息')
+      }
+
+      const apiUrl = config.apiEndpoint
+      const apiKey = config.apiKey
+      const model = config.model
       const protocol = config.protocol || 'openai'
 
       const apiMessages: Array<{ role: string, content: string }> = []
@@ -28,20 +35,28 @@ export function useChat() {
         apiMessages.push({ role: msg.role, content: msg.content })
       }
 
-      const systemPrompt = await buildSystemPrompt(content, apiUrl, apiKey, model, protocol)
+      const systemPrompt = getSystemPrompt()
 
       if (protocol === 'anthropic') {
-        await sendAnthropic(apiUrl, apiKey, model, apiMessages, assistantMsg.id, systemPrompt)
+        await sendAnthropic(apiUrl, apiKey, model, apiMessages, assistantMsg.id, systemPrompt, abortController.signal)
       } else {
-        await sendOpenAI(apiUrl, apiKey, model, apiMessages, assistantMsg.id, systemPrompt)
+        await sendOpenAI(apiUrl, apiKey, model, apiMessages, assistantMsg.id, systemPrompt, abortController.signal)
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    } catch (error: any) {
+      if (error.name === 'AbortError') return
+      console.error('[useChat]', error)
+      const errorMessage = error?.message || String(error)
       chatStore.updateMessage(assistantMsg.id, `[Error] ${errorMessage}`)
     } finally {
+      currentAbortController = null
       chatStore.isLoading = false
       chatStore.isStreaming = false
     }
+  }
+
+  function stopStreaming() {
+    currentAbortController?.abort()
+    currentAbortController = null
   }
 
   async function sendOpenAI(
@@ -51,6 +66,7 @@ export function useChat() {
     messages: Array<{ role: string, content: string }>,
     msgId: string,
     systemPrompt: string,
+    signal?: AbortSignal,
   ) {
     const apiMessages = systemPrompt
       ? [{ role: 'system', content: systemPrompt }, ...messages]
@@ -60,13 +76,14 @@ export function useChat() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model,
         messages: apiMessages,
         stream: true,
       }),
+      signal,
     })
 
     if (!response.ok) {
@@ -76,7 +93,7 @@ export function useChat() {
 
     await readSSE(response, (delta) => {
       chatStore.updateMessage(msgId, delta)
-    })
+    }, signal)
   }
 
   async function sendAnthropic(
@@ -86,6 +103,7 @@ export function useChat() {
     messages: Array<{ role: string, content: string }>,
     msgId: string,
     systemPrompt: string,
+    signal?: AbortSignal,
   ) {
     const anthropicMessages = messages.map(msg => ({
       role: msg.role,
@@ -104,9 +122,10 @@ export function useChat() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': apiKey,
+        'x-api-key': apiKey,
       },
       body: JSON.stringify(body),
+      signal,
     })
 
     if (!response.ok) {
@@ -150,6 +169,7 @@ export function useChat() {
   async function readSSE(
     response: Response,
     onUpdate: (accumulated: string) => void,
+    signal?: AbortSignal,
   ) {
     const reader = response.body!.getReader()
     const decoder = new TextDecoder()
@@ -191,6 +211,7 @@ export function useChat() {
 
   return {
     sendMessage,
+    stopStreaming,
     clearHistory,
   }
 }
